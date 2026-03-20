@@ -7,3 +7,4 @@ pydantic
 PyJWT
 bcrypt
 pydantic-settings
+minio

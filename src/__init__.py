@@ -9,10 +9,8 @@ from .database.session import engine
 def create_app():
     app = Flask(__name__)
 
-    # Create tables
     Base.metadata.create_all(bind=engine)
 
-    # Register routers
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(documents_bp, url_prefix="/documents")
     app.register_blueprint(search_bp, url_prefix="/search")
