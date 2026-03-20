@@ -1,10 +1,11 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from werkzeug.utils import secure_filename
 from src.security.jwt import decode_token
 from src.database.session import SessionLocal
 from src.database.models import Document
 from src.core.config import minio_client, settings
 import uuid
+import json
 from collections import OrderedDict 
 
 documents_bp = Blueprint("documents", __name__)
@@ -66,4 +67,45 @@ def upload_document():
         ("document_id", document_id),
         ("status", "processing")
     ])), 202
+
+
+
+@documents_bp.route("/", methods=["GET"])
+def get_documents():
+    # check the auth token is valid
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split(" ")[1]
+
+    try:
+        payload = decode_token(token)
+        user_id = payload["user_id"]
+    except Exception:
+        return jsonify({"error": "Invalid token"}), 401
+
+    # get the users documents from postgres documents db
+    db = SessionLocal()
+    doc_list = ( db.query(Document)
+        .filter(Document.user_id == user_id)
+        .order_by(Document.upload_date)
+        .all())
+
+    formatted_doc_list = []
+    for document in doc_list:
+        formatted_doc_list.append(OrderedDict([
+            ("document_id", str(document.id)),
+            ("filename", document.filename),
+            ("upload_date", document.upload_date.isoformat() + "Z"),
+            ("status", document.status),
+            ("page_count", document.page_count)
+        ]))
+    
+    #return jsonify(formatted_doc_list), 200
+    return Response(
+        json.dumps(formatted_doc_list, indent=4),
+        status=200,
+        mimetype="application/json"
+    )
 
