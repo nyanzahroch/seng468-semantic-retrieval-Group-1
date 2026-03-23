@@ -31,10 +31,13 @@ minio_client = Minio(
 
 
 def ensure_bucket(): #create the minio bucket
-    if not minio_client.bucket_exists(settings.minio_bucket):
-        minio_client.make_bucket(settings.minio_bucket)
-        print(f"Created bucket: {settings.minio_bucket}")
-    else:
-        print(f"Bucket already exists: {settings.minio_bucket}")
+    try:
+        if not minio_client.bucket_exists(settings.minio_bucket):
+            minio_client.make_bucket(settings.minio_bucket)
+            print(f"Created bucket: {settings.minio_bucket}")
+        else:
+            print(f"Bucket already exists: {settings.minio_bucket}")
+    except Exception as exc:
+        print(f"Warning: MinIO unavailable, skipping bucket check: {exc}")
 
 ensure_bucket()
