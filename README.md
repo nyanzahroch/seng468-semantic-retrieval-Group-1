@@ -41,6 +41,8 @@ How to run
 # How to Run Endpoints from Terminal
 
 ## To Start Services 
+
+`cp .env.example .env`
 `docker compose build`
 `docker compose up`
 `curl -sS -i http://localhost:8080/`
