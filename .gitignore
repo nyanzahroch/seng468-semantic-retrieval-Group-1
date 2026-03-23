@@ -1,0 +1,34 @@
+# Python cache/bytecode
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+
+# OS files
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Test datasets and PDFs
+test_pdfs/
+*.pdf
+
+# Large archives/binaries
+*.zip
+*.tar
+*.gz
+*.7z
+*.bin

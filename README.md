@@ -38,6 +38,56 @@ How to run
 3. Next, if you’d like to check that the pdf made it into minio, follow the steps above to access minio
 4. If you’d like to check that the pdf made it into the postgres documents table, follow the steps above.
 
+# How to Run Endpoints from Terminal
+
+## To Start Services 
+`docker compose build`
+`docker compose up`
+`curl -sS -i http://localhost:8080/`
+
+
+## Authentication: signup
+
+`curl -sS -i -X POST http://localhost:8080/auth/signup -H "Content-Type: application/json" -d '{"username":"[chosen_username]","password":"[chosen_password]"}'` 
+
+For example: 
+`curl -sS -i -X POST http://localhost:8080/auth/signup -H "Content-Type: application/json" -d '{"username":"usercli4","password":"pass123"}'`
+
+
+## Authentication: login and token extraction
+
+`LOGIN_JSON=$(curl -sS -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"[chosen_username]","password":"[chosen_password]"}')`
+
+For example:
+`LOGIN_JSON=$(curl -sS -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{"username":"usercli4","password":"pass123"}')`
+
+`echo "$LOGIN_JSON"`
+`TOKEN=$(printf '%s' "$LOGIN_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')`
+`echo "$TOKEN"`
+
+
+## Documents: upload PDF
+
+`curl -sS -i -X POST http://localhost:8080/documents/ -H "Authorization: Bearer $TOKEN" -F "file=@/pdf/location/file.pdf"`
+
+For example: 
+`curl -sS -i -X POST http://localhost:8080/documents/ -H "Authorization: Bearer $TOKEN" -F "file=@$PWD/test_pdfs/Final_Project_SEng_468.pdf"`
+
+or 
+
+`curl -sS -i -X POST http://localhost:8080/documents/ -H "Authorization: Bearer $TOKEN" -F "file=@$PWD/test_pdfs/lab_commands.pdf"`
+
+
+## Documents: list uploaded docs
+
+`curl -sS -i -X GET http://localhost:8080/documents/ -H "Authorization: Bearer $TOKEN"`
+
+
+## Search
+
+`curl -sS -i "http://localhost:8080/search/?q=test"`
+
+
 
 # Version 1:
 -Uses docker compose, PostgreSQL to store user data, has endpoints /signup and /login

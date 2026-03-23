@@ -41,13 +41,16 @@ def upload_document():
     # upload the pdf to minio bucket pdfs
     minio_path = f"{user_id}/{document_id}.pdf"
 
-    minio_client.put_object(
-        settings.minio_bucket,
-        minio_path,
-        file.stream,
-        length=-1,
-        part_size=10 * 1024 * 1024
-    )
+    try:
+        minio_client.put_object(
+            settings.minio_bucket,
+            minio_path,
+            file.stream,
+            length=-1,
+            part_size=10 * 1024 * 1024
+        )
+    except Exception:
+        return jsonify({"error": "Document storage unavailable"}), 503
 
     # add the data to posgres table documents
     db = SessionLocal()
