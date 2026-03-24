@@ -12,41 +12,20 @@ Checkpoint Requirements:
 3. One PDF Upload & Search (5 points) 
 • Can upload at least one PDF ✅
 • PDF is stored (MinIO or local, doesn’t matter yet) ✅
-• GET /search?q=test returns results 
+• GET /search?q=test returns results ✅
 • Results don’t have to be perfect (even random results OK for checkpoint)
 
-
-# Version 2
-This version implements the POST /document endpoint, which allows a user to upload a pdf (with a valid token) and saves the pdf to minio, and returns 202 accepted
-
-Code changes
--To access minio and look at it, when the app is running go to http://localhost:9001 in the browser, and use username minioadmin and password minioadmin and can then see the buckets there. We are using a bucket called pdfs, which we created in config.py
-config.py also sets up minio
--In models.py, created a new table in postgresql called documents which stores the userid, pdf name, date uploaded, status (processing or ready), page count (null until done processing). For now, it just sets it to status=processing and pagecount=null since only the uploading has been implemented so far
--Note: to look at the databases, can download TablePlus app, and create a new connection with host=localhost, port=5432, user=example_user, password=example_password, database=example_db (these are found in the .env file), and then can see what is in the database
--In documents.py, added the POST /documents endpoint which checks the user’s auth token, makes sure the pdf is valid, makes a document id, uploads the pdf to minio, puts the info into documents postgres table, then returns the 202 accepted response to user
--Added minio setup to .env and docker-compose.yml files
-
-How to run
-1. Follow steps 1-9 from version 1 to get a valid user with its token. 
-2. In postman, test documents endpoint using POST http://localhost:8080/documents . In the the authorization tab select auth type Bearer Token, and copy and paste the token in. in the body tab, choose form-data from the dropdown, then for key type file, and the drop down next to it select File, then for value upload a pdf of your choice. Press send, and should get output:
-{
-    "document_id": "f65cd227-2599-4cc3-b9b6-d0375c1695aa",
-    "message": "PDF uploaded, processing started",
-    "status": "processing"
-}
-3. Next, if you’d like to check that the pdf made it into minio, follow the steps above to access minio
-4. If you’d like to check that the pdf made it into the postgres documents table, follow the steps above.
 
 # How to Run Endpoints from Terminal
 
 ## To Start Services 
 
-`cp .env.example .env`
-`docker compose build`
-`docker compose up`
-`curl -sS -i http://localhost:8080/`
-
+```
+cp .env.example .env
+docker compose build
+docker compose up
+curl -sS -i http://localhost:8080/
+```
 
 ## Authentication: signup
 
@@ -92,6 +71,29 @@ or
 For example:
 `curl -sS -i -X GET "http://localhost:8080/search/?q=machine%20learning%20optimization" -H "Authorization: Bearer $TOKEN"`
 
+
+
+# Version 2
+This version implements the POST /document endpoint, which allows a user to upload a pdf (with a valid token) and saves the pdf to minio, and returns 202 accepted
+
+Code changes
+-To access minio and look at it, when the app is running go to http://localhost:9001 in the browser, and use username minioadmin and password minioadmin and can then see the buckets there. We are using a bucket called pdfs, which we created in config.py
+config.py also sets up minio
+-In models.py, created a new table in postgresql called documents which stores the userid, pdf name, date uploaded, status (processing or ready), page count (null until done processing). For now, it just sets it to status=processing and pagecount=null since only the uploading has been implemented so far
+-Note: to look at the databases, can download TablePlus app, and create a new connection with host=localhost, port=5432, user=example_user, password=example_password, database=example_db (these are found in the .env file), and then can see what is in the database
+-In documents.py, added the POST /documents endpoint which checks the user’s auth token, makes sure the pdf is valid, makes a document id, uploads the pdf to minio, puts the info into documents postgres table, then returns the 202 accepted response to user
+-Added minio setup to .env and docker-compose.yml files
+
+How to run
+1. Follow steps 1-9 from version 1 to get a valid user with its token. 
+2. In postman, test documents endpoint using POST http://localhost:8080/documents . In the the authorization tab select auth type Bearer Token, and copy and paste the token in. in the body tab, choose form-data from the dropdown, then for key type file, and the drop down next to it select File, then for value upload a pdf of your choice. Press send, and should get output:
+{
+    "document_id": "f65cd227-2599-4cc3-b9b6-d0375c1695aa",
+    "message": "PDF uploaded, processing started",
+    "status": "processing"
+}
+3. Next, if you’d like to check that the pdf made it into minio, follow the steps above to access minio
+4. If you’d like to check that the pdf made it into the postgres documents table, follow the steps above.
 
 
 # Version 1:
