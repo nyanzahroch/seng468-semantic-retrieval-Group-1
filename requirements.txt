@@ -8,3 +8,7 @@ PyJWT
 bcrypt
 pydantic-settings
 minio
+numpy==1.26.4
+pgvector
+fastembed
+pypdf

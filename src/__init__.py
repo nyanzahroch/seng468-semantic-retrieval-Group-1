@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from sqlalchemy import text
 from .core.config import settings
 from .router.auth import auth_bp
 from .router.documents import documents_bp
@@ -8,6 +9,9 @@ from .database.session import engine
 
 def create_app():
     app = Flask(__name__)
+
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
     Base.metadata.create_all(bind=engine)
 
