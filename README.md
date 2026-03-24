@@ -87,7 +87,7 @@ or
 
 ## Search
 
-`curl -sS -i "http://localhost:8080/search/?q=test"`
+`curl -sS -i -X GET "http://localhost:8080/search/?q=machine%20learning%20optimization" -H "Authorization: Bearer $TOKEN"`
 
 
 

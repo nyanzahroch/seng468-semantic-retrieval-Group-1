@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     database_url: str
     jwt_secret: str
     jwt_algorithm: str = "HS256"
+    embedding_model_name: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimensions: int = 384
 
     postgres_user: str
     postgres_password: str
