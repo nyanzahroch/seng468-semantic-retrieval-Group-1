@@ -1,10 +1,8 @@
-from functools import lru_cache
-from math import sqrt
 from flask import Blueprint, jsonify, request
 from sqlalchemy import select, func
-from fastembed import TextEmbedding
 
 from src.core.config import settings
+from src.core.embeddings import embed_texts
 from src.database.models import Document, Paragraph
 from src.database.session import SessionLocal
 from src.security.jwt import decode_token
@@ -12,17 +10,8 @@ from src.security.jwt import decode_token
 search_bp = Blueprint("search", __name__)
 
 
-@lru_cache(maxsize=1)
-def _get_embedder() -> TextEmbedding:
-    return TextEmbedding(model_name=settings.embedding_model_name)
-
-
 def _embed_query(query_text: str) -> list[float]:
-    vector = list(_get_embedder().embed([query_text]))[0].tolist()
-    norm = sqrt(sum(value * value for value in vector))
-    if norm > 0:
-        vector = [value / norm for value in vector]
-    return vector
+    return embed_texts([query_text])[0]
 
 
 @search_bp.get("/")

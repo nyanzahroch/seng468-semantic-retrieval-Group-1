@@ -4,8 +4,10 @@ from src.security.jwt import decode_token
 from src.database.session import SessionLocal
 from src.database.models import Document
 from src.core.config import minio_client, settings
+from src.core.indexing import index_document_bytes
 import uuid
 import json
+from io import BytesIO
 from collections import OrderedDict 
 
 documents_bp = Blueprint("documents", __name__)
@@ -37,6 +39,10 @@ def upload_document():
 
     # create a document id
     document_id = str(uuid.uuid4())
+    pdf_bytes = file.read()
+
+    if not pdf_bytes:
+        return jsonify({"error": "Uploaded PDF is empty"}), 400
 
     # upload the pdf to minio bucket pdfs
     minio_path = f"{user_id}/{document_id}.pdf"
@@ -45,9 +51,8 @@ def upload_document():
         minio_client.put_object(
             settings.minio_bucket,
             minio_path,
-            file.stream,
-            length=-1,
-            part_size=10 * 1024 * 1024
+            BytesIO(pdf_bytes),
+            length=len(pdf_bytes),
         )
     except Exception:
         return jsonify({"error": "Document storage unavailable"}), 503
@@ -64,12 +69,25 @@ def upload_document():
     db.add(doc)
     db.commit()
 
-    # send the user a 202 accepted message
-    return jsonify(OrderedDict([
-        ("message", "PDF uploaded, processing started"),
-        ("document_id", document_id),
-        ("status", "processing")
-    ])), 202
+    try:
+        page_count, chunk_count = index_document_bytes(db, doc, pdf_bytes)
+        return jsonify(OrderedDict([
+            ("message", "PDF uploaded and indexed"),
+            ("document_id", document_id),
+            ("status", "ready"),
+            ("page_count", page_count),
+            ("chunk_count", chunk_count),
+        ])), 202
+    except Exception:
+        doc.status = "failed"
+        db.commit()
+        return jsonify(OrderedDict([
+            ("message", "PDF uploaded but indexing failed"),
+            ("document_id", document_id),
+            ("status", "failed"),
+        ])), 202
+    finally:
+        db.close()
 
 
 

@@ -11,3 +11,4 @@ minio
 numpy==1.26.4
 pgvector
 fastembed
+pypdf
