@@ -9,6 +9,7 @@ import uuid
 import json
 from io import BytesIO
 from collections import OrderedDict 
+from minio.error import S3Error
 
 documents_bp = Blueprint("documents", __name__)
 
@@ -17,7 +18,7 @@ def upload_document():
     # check the auth token is valid
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Missing or invalid token"}), 401
+        return jsonify({"error": "Invalid credentials"}), 401
 
     token = auth_header.split(" ")[1]
 
@@ -42,7 +43,7 @@ def upload_document():
     pdf_bytes = file.read()
 
     if not pdf_bytes:
-        return jsonify({"error": "Uploaded PDF is empty"}), 400
+        return jsonify({"error": "PDF is empty"}), 400
 
     # upload the pdf to minio bucket pdfs
     minio_path = f"{user_id}/{document_id}.pdf"
@@ -96,7 +97,7 @@ def get_documents():
     # check the auth token is valid
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Missing or invalid token"}), 401
+        return jsonify({"error": "Invalid credentials"}), 401
 
     token = auth_header.split(" ")[1]
 
@@ -129,4 +130,3 @@ def get_documents():
         status=200,
         mimetype="application/json"
     )
-

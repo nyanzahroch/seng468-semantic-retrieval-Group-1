@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from sqlalchemy import select, func
+from collections import OrderedDict
+import json
 
 from src.core.config import settings
 from src.core.embeddings import embed_texts
@@ -60,16 +62,29 @@ def search():
         )
         rows = db.execute(stmt).all()
 
-        response = [
-            {
-                "text": row.text,
-                "score": round(float(row.score), 3),
-                "document_id": str(row.document_id),
-                "filename": row.filename,
-            }
-            for row in rows
-        ]
+        response = []
+        for row in rows:
+            response.append(OrderedDict([
+                ("text", row.text),
+                ("score", round(float(row.score), 3)),
+                ("document_id", str(row.document_id)),
+                ("filename", row.filename)
+            ]))
+        # response = [
+        #     {
+        #         "text": row.text,
+        #         "score": round(float(row.score), 3),
+        #         "document_id": str(row.document_id),
+        #         "filename": row.filename,
+        #     }
+        #     for row in rows
+        # ]
 
-        return jsonify(response), 200
+        # return jsonify(response), 200
+        return Response(
+            json.dumps(response, indent=4),
+            status=200,
+            mimetype="application/json"
+        )
     finally:
         db.close()
