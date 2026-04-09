@@ -64,6 +64,12 @@ or
 `curl -sS -i -X GET http://localhost:8080/documents/ -H "Authorization: Bearer $TOKEN"`
 
 
+## Documents: delete doc
+
+`curl -sS -i -X DELETE http://localhost:8080/documents/<document_id> -H "Authorization: Bearer $TOKEN"`
+
+
+
 ## Search
 
 `curl -sS -i -X GET "http://localhost:8080/search/?q=insert%20query%20to%20test" -H "Authorization: Bearer $TOKEN"`

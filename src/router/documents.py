@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, Response
 from werkzeug.utils import secure_filename
 from src.security.jwt import decode_token
 from src.database.session import SessionLocal
-from src.database.models import Document
+from src.database.models import Document, Paragraph
 from src.core.config import minio_client, settings
 from src.core.indexing import index_document_bytes
 import uuid
@@ -130,3 +130,58 @@ def get_documents():
         status=200,
         mimetype="application/json"
     )
+
+
+@documents_bp.route("/<document_id>", methods=["DELETE"])
+def delete_document(document_id):
+    # check the auth token is valid
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = auth_header.split(" ")[1]
+
+    try:
+        payload = decode_token(token)
+        user_id = payload["user_id"]
+    except Exception:
+        return jsonify({"error": "Invalid token"}), 401
+
+    # get the document from postgres
+    db = SessionLocal()
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == user_id
+    ).first()
+
+    if not document:
+        db.close()
+        return jsonify({"error": "Document not found or not owned by user"}), 404
+
+    try:
+        # delete the pdf from minio bucket
+        minio_path = f"{user_id}/{document_id}.pdf"
+        minio_client.remove_object(settings.minio_bucket, minio_path)
+    except S3Error:
+        # if minio delete fails, continue with database deletion
+        pass
+
+    try:
+        # delete all paragraphs associated with this document
+        db.query(Paragraph).filter(Paragraph.document_id == document_id).delete()
+
+        # delete the document from database
+        db.delete(document)
+        db.commit()
+
+        return jsonify(OrderedDict([
+            ("message", "Document and all associated data deleted"),
+            ("document_id", document_id)
+        ])), 200
+
+    except Exception:
+        db.rollback()
+        return jsonify({"error": "Failed to delete document"}), 500
+
+    finally:
+        db.close()
