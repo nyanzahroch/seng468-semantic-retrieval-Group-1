@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile
     container_name: celery_worker
     env_file: .env
-    command: celery -A src.core.celery_app.celery_app worker --loglevel=info --queues=${CELERY_INDEX_QUEUE:-indexing}
+    command: python -m src.worker
     depends_on:
       postgres:
         condition: service_healthy
