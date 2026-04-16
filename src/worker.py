@@ -8,6 +8,7 @@ Or in docker: celery -A src.core.celery_app worker --loglevel=info
 
 import logging
 import sys
+from sqlalchemy import text
 from src.core.celery_app import celery_app
 from src.core.config import settings
 from src.database.session import engine
@@ -27,18 +28,18 @@ def main():
     # Validate database connectivity
     try:
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
-        logger.info("✓ Database connection OK")
+            conn.execute(text("SELECT 1"))
+        logger.info("Database connection OK")
     except Exception as exc:
-        logger.error(f"✗ Database connection failed: {exc}")
+        logger.error(f"Database connection failed: {exc}")
         sys.exit(1)
 
     # Ensure all tables exist
     try:
         Base.metadata.create_all(bind=engine)
-        logger.info("✓ Database schema initialized")
+        logger.info("Database schema initialized")
     except Exception as exc:
-        logger.error(f"✗ Database schema initialization failed: {exc}")
+        logger.error(f"Database schema initialization failed: {exc}")
         sys.exit(1)
 
     # Log worker configuration

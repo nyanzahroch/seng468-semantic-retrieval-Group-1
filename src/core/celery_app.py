@@ -11,3 +11,4 @@ celery_app = Celery(
 )
 
 celery_app.conf.task_default_queue = settings.celery_index_queue
+celery_app.conf.task_track_started = True
