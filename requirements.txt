@@ -12,3 +12,5 @@ numpy==1.26.4
 pgvector==0.3.6
 fastembed==0.5.1
 pypdf==5.1.0
+celery==5.4.0
+redis==5.2.1
