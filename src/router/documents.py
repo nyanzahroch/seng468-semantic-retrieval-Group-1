@@ -140,6 +140,53 @@ def get_documents():
     )
 
 
+@documents_bp.route("/<document_id>/status", methods=["GET"])
+def get_document_status(document_id):
+    # check the auth token is valid
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = auth_header.split(" ")[1]
+
+    try:
+        payload = decode_token(token)
+        user_id = payload["user_id"]
+    except Exception:
+        return jsonify({"error": "Invalid token"}), 401
+
+    # Verify the document belongs to this user
+    db = SessionLocal()
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == user_id
+    ).first()
+
+    if not document:
+        db.close()
+        return jsonify({"error": "Document not found or not owned by user"}), 404
+
+    db.close()
+
+    # Get the task result from Celery's result backend (Redis)
+    task_result = celery_app.AsyncResult(document_id)
+
+    response = OrderedDict([
+        ("document_id", str(document_id)),
+        ("task_id", str(document_id)),
+        ("state", task_result.state),
+        ("status", document.status),
+    ])
+
+    # Include result details if task is complete
+    if task_result.state == "SUCCESS":
+        response["result"] = task_result.result
+    elif task_result.state == "FAILURE":
+        response["error"] = str(task_result.info)
+
+    return jsonify(response), 200
+
+
 @documents_bp.route("/<document_id>", methods=["DELETE"])
 def delete_document(document_id):
     # check the auth token is valid
