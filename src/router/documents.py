@@ -4,7 +4,7 @@ from src.security.jwt import decode_token
 from src.database.session import SessionLocal
 from src.database.models import Document, Paragraph
 from src.core.config import minio_client, settings
-from src.core.indexing import index_document_bytes
+from src.core.celery_app import celery_app
 import uuid
 import json
 from io import BytesIO
@@ -60,33 +60,41 @@ def upload_document():
 
     # add the data to posgres table documents
     db = SessionLocal()
-    doc = Document(
-        id=document_id,
-        user_id=user_id,
-        filename=filename,
-        status="processing",
-        page_count=None
-    )
-    db.add(doc)
-    db.commit()
-
     try:
-        page_count, chunk_count = index_document_bytes(db, doc, pdf_bytes)
+        doc = Document(
+            id=document_id,
+            user_id=user_id,
+            filename=filename,
+            status="queued",
+            page_count=None,
+        )
+        db.add(doc)
+        db.commit()
+
+        celery_app.send_task(
+            settings.index_document_task_name,
+            kwargs={"document_id": document_id, "user_id": user_id},
+            task_id=document_id,
+            queue=settings.celery_index_queue,
+        )
+
         return jsonify(OrderedDict([
-            ("message", "PDF uploaded and indexed"),
+            ("message", "PDF uploaded and indexing queued"),
             ("document_id", document_id),
-            ("status", "ready"),
-            ("page_count", page_count),
-            ("chunk_count", chunk_count),
+            ("task_id", document_id),
+            ("status", "queued"),
         ])), 202
     except Exception:
-        doc.status = "failed"
-        db.commit()
+        db.rollback()
+        failed_doc = db.query(Document).filter(Document.id == document_id).first()
+        if failed_doc:
+            failed_doc.status = "failed"
+            db.commit()
         return jsonify(OrderedDict([
-            ("message", "PDF uploaded but indexing failed"),
+            ("message", "PDF uploaded but indexing could not be queued"),
             ("document_id", document_id),
             ("status", "failed"),
-        ])), 202
+        ])), 503
     finally:
         db.close()
 
