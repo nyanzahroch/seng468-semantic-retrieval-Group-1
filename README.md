@@ -69,6 +69,12 @@ or
 `curl -sS -i -X DELETE http://localhost:8080/documents/<document_id> -H "Authorization: Bearer $TOKEN"`
 
 
+## Documents: poll task status
+
+`DOCUMENT_ID="<uuid from uploaded doc>"`
+
+`curl -sS -X GET "http://localhost:8080/documents/$DOCUMENT_ID/status" -H "Authorization: Bearer $TOKEN" | python3 -m json.tool`
+
 
 ## Search
 

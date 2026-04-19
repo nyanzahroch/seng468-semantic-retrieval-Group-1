@@ -18,6 +18,19 @@ class Settings(BaseSettings):
     minio_secret_key: str 
     minio_bucket: str 
 
+    rabbitmq_user: str = "guest"
+    rabbitmq_password: str = "guest"
+    rabbitmq_host: str = "rabbitmq"
+    rabbitmq_port: int = 5672
+
+    redis_host: str = "redis"
+    redis_port: int = 6379
+
+    celery_broker_url: str = "amqp://guest:guest@rabbitmq:5672//"
+    celery_result_backend: str = "redis://redis:6379/0"
+    celery_index_queue: str = "indexing"
+    index_document_task_name: str = "src.worker.tasks.index_document_task"
+
     class Config:
         env_file = ".env"
 
